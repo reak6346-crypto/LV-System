@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ផ្ទះសំណាក់ លាភ វីឡា - ប្រព័ន្ធគ្រប់គ្រង និងទិន្នន័យ</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Khmer Font (Kantumruy Pro) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:ital,wght@0,100..700;1,100..700&display=swap" rel="stylesheet">
+    <!-- sql.js (SQLite for Web Browser) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <style>
+        body { font-family: 'Kantumruy Pro', sans-serif; }
+        @media print {
+            body * { visibility: hidden; }
+            #printable-invoice, #printable-invoice * { visibility: visible; }
+            #printable-invoice { position: absolute; left: 0; top: 0; width: 100%; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen py-8 px-4">
+
+    <div class="max-w-7xl mx-auto space-y-8">
+        
+        <!-- Header Controls -->
+        <div class="no-print flex flex-wrap justify-between items-center bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-lg">
+            <div class="flex items-center space-x-3">
+                <span class="text-2xl font-extrabold text-amber-400">LV</span>
+                <div>
+                    <h1 class="text-lg font-bold text-white">ផ្ទះសំណាក់ លាភ វីឡា ( Database Enabled )</h1>
+                    <p class="text-xs text-emerald-400" id="dbStatus">⚡ កំពុងរៀបចំទិន្នន័យ (Database Init)...</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="exportDatabase()" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs font-semibold border border-slate-600">
+                    💾 ទាញយក Database (Export)
+                </button>
+                <label class="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs font-semibold border border-slate-600 cursor-pointer">
+                    📂 នាំចូល Database (Import)
+                    <input type="file" id="importFile" onchange="importDatabase(event)" class="hidden" accept=".sqlite,.db">
+                </label>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Left Column: Pricing Table & Booking Form -->
+            <div class="space-y-6 no-print">
+                
+                <!-- Price Table Header & Info -->
+                <div class="bg-slate-800 rounded-2xl p-5 border border-slate-700 shadow-xl space-y-4">
+                    <div class="text-center border-b border-slate-700 pb-3">
+                        <h2 class="text-xl font-bold text-slate-200">តារាងតម្លៃបន្ទប់ស្នាក់នៅ</h2>
+                    </div>
+
+                    <!-- Table Day Rates -->
+                    <div>
+                        <p class="text-xs text-slate-400 mb-2">១. តារាងតម្លៃទូទៅ (គិតចាប់ពីម៉ោង ៧ព្រឹក ដល់ ៩យប់)៖</p>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-center border-collapse border border-slate-700 text-sm">
+                                <thead>
+                                    <tr class="bg-slate-700 text-amber-300">
+                                        <th class="p-2 border border-slate-600">ម៉ោង (H)</th>
+                                        <th class="p-2 border border-slate-600">បន្ទប់ (V)</th>
+                                        <th class="p-2 border border-slate-600">បន្ទប់ (M)</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-700 text-xs">
+                                    <tr><td class="p-1 border border-slate-700">ក្រោម 3 ម៉ោង</td><td class="p-1 border border-slate-700 text-amber-300 font-bold">$8</td><td class="p-1 border border-slate-700 text-amber-300 font-bold">$7</td></tr>
+                                    <tr><td class="p-1 border border-slate-700">3h - 4h</td><td class="p-1 border border-slate-700 text-amber-300 font-bold">$11</td><td class="p-1 border border-slate-700 text-amber-300 font-bold">$9</td></tr>
+                                    <tr><td class="p-1 border border-slate-700">4h - 6h</td><td class="p-1 border border-slate-700 text-amber-300 font-bold">$15</td><td class="p-1 border border-slate-700 text-amber-300 font-bold">$13</td></tr>
+                                    <tr><td class="p-1 border border-slate-700">6h - 12h</td><td class="p-1 border border-slate-700 text-amber-300 font-bold">$18</td><td class="p-1 border border-slate-700 text-amber-300 font-bold">$16</td></tr>
+                                    <tr><td class="p-1 border border-slate-700">12h - 15h</td><td class="p-1 border border-slate-700 text-amber-300 font-bold">$22</td><td class="p-1 border border-slate-700 text-amber-300 font-bold">$19</td></tr>
+                                    <tr><td class="p-1 border border-slate-700">15h - 24h</td><td class="p-1 border border-slate-700 text-amber-300 font-bold">$27</td><td class="p-1 border border-slate-700 text-amber-300 font-bold">$24</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Table Night Rates -->
+                    <div>
+                        <p class="text-xs text-rose-400 font-semibold mb-2">២. ចូលក្រោយម៉ោង ៩យប់៖</p>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-center border-collapse border border-slate-700 text-sm">
+                                <thead>
+                                    <tr class="bg-rose-900/50 text-rose-300">
+                                        <th class="p-2 border border-slate-600">ម៉ោង (H)</th>
+                                        <th class="p-2 border border-slate-600">បន្ទប់ (V)</th>
+                                        <th class="p-2 border border-slate-600">បន្ទប់ (M)</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-700 text-xs">
+                                    <tr><td class="p-1 border border-slate-700">3h</td><td class="p-1 border border-slate-700 text-amber-300 font-bold">$10</td><td class="p-1 border border-slate-700 text-amber-300 font-bold">$8</td></tr>
+                                    <tr><td class="p-1 border border-slate-700">3h - 4h</td><td class="p-1 border border-slate-700 text-amber-300 font-bold">$13</td><td class="p-1 border border-slate-700 text-amber-300 font-bold">$11</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Booking & Payment Form -->
+                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl space-y-4">
+                    <h3 class="text-xl font-bold text-amber-400 border-b border-slate-700 pb-2">ការគណនាតម្លៃ និង ទូទាត់ប្រាក់</h3>
+                    
+                    <div>
+                        <label class="block text-sm mb-1 text-slate-300">ឈ្មោះអតិថិជន / Customer Name</label>
+                        <input type="text" id="customerName" placeholder="បញ្ចូលឈ្មោះ" class="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-amber-500">
+                    </div>
+
+                    <!-- Changed to type="text" for free text entry -->
+                    <div>
+                        <label class="block text-sm mb-1 text-slate-300">កាលបរិច្ឆេទវិក្កយបត្រ / Invoice Date</label>
+                        <input type="text" id="invoiceDate" placeholder="ឧទាហរណ៍: 2026-11-15 ឬ ថ្ងៃនេះ" class="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-amber-500">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm mb-1 text-slate-300">ប្រភេទបន្ទប់ (Room Type)</label>
+                            <select id="roomType" onchange="calculatePrice()" class="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-amber-500">
+                                <option value="V">បន្ទប់ (V)</option>
+                                <option value="M">បន្ទប់ (M)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm mb-1 text-slate-300">ប្រភេទភ្ញៀវ / Guest Category</label>
+                            <select id="guestCategory" onchange="calculatePrice()" class="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-amber-500">
+                                <option value="local">ភ្ញៀវទូទៅ / ក្នុងស្រុក</option>
+                                <option value="foreigner">ភ្ញៀវបរទេស (1 Night = $25)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm mb-1 text-slate-300">រយៈពេល និងពេលវេលាស្នាក់នៅ (Duration/Time)</label>
+                        <select id="duration" onchange="calculatePrice()" class="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-amber-500">
+                            <optgroup label="តម្លៃទូទៅ (7:00 AM - 9:00 PM)">
+                                <option value="under3">ក្រោម 3 ម៉ោង</option>
+                                <option value="3-4">3h - 4h</option>
+                                <option value="4-6">4h - 6h</option>
+                                <option value="6-12">6h - 12h</option>
+                                <option value="12-15">12h - 15h</option>
+                                <option value="15-24">15h - 24h</option>
+                            </optgroup>
+                            <optgroup label="ចូលក្រោយម៉ោង ៩យប់ (After 9:00 PM)">
+                                <option value="night-3">3 ម៉ោង (ចូលក្រោយ 9យប់)</option>
+                                <option value="night-3-4">3h - 4h (ចូលក្រោយ 9យប់)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm mb-1 text-slate-300">វិធីសាស្ត្រទូទាត់ (Payment Method)</label>
+                        <select id="paymentMethod" class="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-amber-500">
+                            <option value="KHQR (បង់តាមធនាគារ)">KHQR / ធនាគារ (ABA, Wing...)</option>
+                            <option value="Cash (សាច់ប្រាក់)">Cash (សាច់ប្រាក់)</option>
+                        </select>
+                    </div>
+
+                    <div class="flex justify-between items-center bg-slate-900 p-4 rounded-xl border border-slate-700">
+                        <span class="text-lg">តម្លៃសរុប (Total Amount):</span>
+                        <span id="totalPriceDisplay" class="text-2xl font-bold text-amber-400">$8.00</span>
+                    </div>
+
+                    <button onclick="saveAndGenerateInvoice()" class="w-full py-3 bg-amber-500 hover:bg-amber-600 font-bold text-slate-900 rounded-xl shadow-lg transition">
+                        💾 រក្សាទុក និង ចេញវិក្កយបត្រ (Save & Print)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Column: Printable Invoice Preview -->
+            <div class="flex flex-col justify-start space-y-6">
+                <div id="printable-invoice" class="bg-white text-slate-900 rounded-2xl p-8 shadow-2xl border border-slate-200">
+                    <!-- Invoice Header -->
+                    <div class="flex justify-between items-start border-b border-slate-200 pb-6">
+                        <div>
+                            <h1 class="text-2xl font-bold text-amber-600">ផ្ទះសំណាក់ លាភ វីឡា</h1>
+                            <p class="text-xs text-slate-500 mt-1">វិក្កយបត្រ / INVOICE</p>
+                            <p class="text-[11px] text-slate-400">ទំនាក់ទំនង៖ 017 678 055 | លេខលើតុ (801)</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs font-semibold text-slate-500">លេខវិក្កយបត្រ (INV#)</p>
+                            <p id="invNo" class="text-sm font-bold text-slate-800">INV-YYYYMMDD-XXX</p>
+                            <p id="invDate" class="text-xs text-slate-500 mt-1">កាលបរិច្ឆេទ: --/--/----</p>
+                        </div>
+                    </div>
+
+                    <!-- Customer Detail -->
+                    <div class="my-6 space-y-1">
+                        <p class="text-xs text-slate-500">អតិថិជន / Customer:</p>
+                        <p id="invCustomerName" class="text-lg font-bold text-slate-800">អតិថិជនទូទៅ</p>
+                    </div>
+
+                    <!-- Invoice Table -->
+                    <table class="w-full text-left my-6 text-sm">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700">
+                                <th class="p-3 rounded-l-lg">ការពិពណ៌នា (Description)</th>
+                                <th class="p-3 text-center">ប្រភេទ</th>
+                                <th class="p-3 text-right rounded-r-lg">តម្លៃ (Price)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr>
+                                <td id="invDescription" class="p-3 font-medium">បន្ទប់ស្នាក់នៅ (ក្រោម 3 ម៉ោង)</td>
+                                <td id="invRoomType" class="p-3 text-center">បន្ទប់ (V)</td>
+                                <td id="invPrice" class="p-3 text-right font-bold">$8.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- Summary & Payment Info -->
+                    <div class="border-t border-slate-200 pt-4 space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-slate-600">វិធីសាស្ត្រទូទាត់:</span>
+                            <span id="invPaymentMethod" class="font-semibold text-slate-800">KHQR / ធនាគារ</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-slate-600">ស្ថានភាពទូទាត់:</span>
+                            <span class="font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded text-xs">ទូទាត់រួច (PAID)</span>
+                        </div>
+                        <div class="flex justify-between text-lg font-bold border-t border-slate-200 pt-3 mt-2">
+                            <span>ប្រាក់សរុប (Total):</span>
+                            <span id="invTotal" class="text-amber-600">$8.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Invoice Footer -->
+                    <div class="mt-8 text-center border-t border-dashed border-slate-300 pt-4">
+                        <p class="text-xs text-slate-500">សូមអរគុណសម្រាប់ការគាំទ្រសេវាកម្មរបស់យើងខ្ញុំ!</p>
+                        <p class="text-[10px] text-slate-400 mt-1">Thank you for choosing our service.</p>
+                    </div>
+                </div>
+
+                <!-- Print Button -->
+                <button onclick="window.print()" class="no-print w-full py-3 bg-emerald-600 hover:bg-emerald-700 font-bold text-white rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                    🖨️ បោះពុម្ព / ទាញយក PDF (Print Receipt)
+                </button>
+            </div>
+        </div>
+
+        <!-- Database Booking History & Reports Table -->
+        <div class="no-print bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-4">
+                <div>
+                    <h3 class="text-xl font-bold text-amber-400">📊 ប្រវត្តិការកក់ និងរបាយការណ៍ទិន្នន័យ (Database Records)</h3>
+                    <p class="text-xs text-slate-400">ទិន្នន័យទាំងអស់ត្រូវបានរក្សាទុកក្នុង Database ក្នុង Browser របស់អ្នក</p>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs text-slate-400">ចំណូលសរុប៖</span>
+                    <span id="totalRevenue" class="text-xl font-extrabold text-emerald-400 ml-2">$0.00</span>
+                </div>
+            </div>
+
+            <!-- Transactions Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-700 text-slate-200 uppercase text-xs">
+                        <tr>
+                            <th class="p-3">លេខវិក្កយបត្រ</th>
+                            <th class="p-3">ឈ្មោះអតិថិជន</th>
+                            <th class="p-3">ប្រភេទបន្ទប់</th>
+                            <th class="p-3">រយៈពេល</th>
+                            <th class="p-3">វិធីសាស្ត្រទូទាត់</th>
+                            <th class="p-3">តម្លៃ</th>
+                            <th class="p-3">កាលបរិច្ឆេទ</th>
+                            <th class="p-3 text-center">សកម្មភាព</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody" class="divide-y divide-slate-700">
+                        <tr>
+                            <td colspan="8" class="p-4 text-center text-slate-500">មិនទាន់មានទិន្នន័យនៅឡើយទេ</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JavaScript logic with SQLite DB -->
+    <script>
+        let db = null;
+
+        const pricingMatrix = {
+            'V': { 
+                'under3': 8, '3-4': 11, '4-6': 15, '6-12': 18, '12-15': 22, '15-24': 27,
+                'night-3': 10, 'night-3-4': 13
+            },
+            'M': { 
+                'under3': 7, '3-4': 9, '4-6': 13, '6-12': 16, '12-15': 19, '15-24': 24,
+                'night-3': 8, 'night-3-4': 11
+            }
+        };
+
+        const durationLabels = {
+            'under3': 'ក្រោម 3 ម៉ោង',
+            '3-4': '3h - 4h',
+            '4-6': '4h - 6h',
+            '6-12': '6h - 12h',
+            '12-15': '12h - 15h',
+            '15-24': '15h - 24h',
+            'night-3': '3 ម៉ោង (ចូលក្រោយ 9យប់)',
+            'night-3-4': '3h - 4h (ចូលក្រោយ 9យប់)'
+        };
+
+        // Initialize SQLite Web Database
+        async function initDatabase() {
+            try {
+                const SQL = await initSqlJs({
+                    locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+                });
+
+                const savedDb = localStorage.getItem("villa_db");
+                if (savedDb) {
+                    const uInt8Array = new Uint8Array(JSON.parse(savedDb));
+                    db = new SQL.Database(uInt8Array);
+                } else {
+                    db = new SQL.Database();
+                    db.run(`
+                        CREATE TABLE IF NOT EXISTS bookings (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            invoice_no TEXT UNIQUE,
+                            customer_name TEXT,
+                            room_type TEXT,
+                            guest_category TEXT,
+                            duration TEXT,
+                            payment_method TEXT,
+                            amount REAL,
+                            created_at TEXT
+                        );
+                    `);
+                    saveDbToLocalStorage();
+                }
+
+                document.getElementById('dbStatus').innerText = '✅ SQLite Database បានតភ្ជាប់ជោគជ័យ';
+                loadBookingHistory();
+            } catch (err) {
+                console.error(err);
+                document.getElementById('dbStatus').innerText = '❌ ការតភ្ជាប់ Database មានបញ្ហា';
+            }
+        }
+
+        function saveDbToLocalStorage() {
+            if (!db) return;
+            const data = db.export();
+            const array = Array.from(data);
+            localStorage.setItem("villa_db", JSON.stringify(array));
+        }
+
+        function calculatePrice() {
+            const guestCategory = document.getElementById('guestCategory').value;
+            
+            if (guestCategory === 'foreigner') {
+                document.getElementById('totalPriceDisplay').innerText = `$25.00`;
+                return 25;
+            }
+
+            const type = document.getElementById('roomType').value;
+            const dur = document.getElementById('duration').value;
+            const price = pricingMatrix[type][dur];
+            document.getElementById('totalPriceDisplay').innerText = `$${price}.00`;
+            return price;
+        }
+
+        function saveAndGenerateInvoice() {
+            const name = document.getElementById('customerName').value.trim() || 'អតិថិជនទូទៅ';
+            const type = document.getElementById('roomType').value;
+            const dur = document.getElementById('duration').value;
+            const guestCategory = document.getElementById('guestCategory').value;
+            const payMethod = document.getElementById('paymentMethod').value;
+            const price = calculatePrice();
+
+            // Handle custom text input for invoice date safely
+            const dateInputVal = document.getElementById('invoiceDate').value.trim();
+            const dateString = dateInputVal !== "" ? dateInputVal : new Date().toISOString().slice(0, 10);
+
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const randomNum = Math.floor(100 + Math.random() * 900);
+            const invNo = `INV-${year}${month}${day}-${randomNum}`;
+            const durLabel = guestCategory === 'foreigner' ? 'ស្នាក់នៅសម្រាប់ភ្ញៀវបរទេស (1 Night)' : durationLabels[dur];
+
+            // 1. Insert into SQLite Database
+            if (db) {
+                const stmt = db.prepare(`
+                    INSERT INTO bookings (invoice_no, customer_name, room_type, guest_category, duration, payment_method, amount, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                `);
+                stmt.run([invNo, name, type, guestCategory, durLabel, payMethod, price, dateString]);
+                stmt.free();
+                saveDbToLocalStorage();
+                loadBookingHistory();
+            }
+
+            // 2. Render Invoice Preview
+            document.getElementById('invNo').innerText = invNo;
+            document.getElementById('invDate').innerText = `កាលបរិច្ឆេទ: ${dateString}`;
+            document.getElementById('invCustomerName').innerText = name;
+            document.getElementById('invRoomType').innerText = `បន្ទប់ (${type})`;
+            document.getElementById('invDescription').innerText = `ស្នាក់នៅរយៈពេល ${durLabel}`;
+            document.getElementById('invPrice').innerText = `$${price}.00`;
+            document.getElementById('invTotal').innerText = `$${price}.00`;
+            document.getElementById('invPaymentMethod').innerText = payMethod;
+        }
+
+        function loadBookingHistory() {
+            if (!db) return;
+
+            const res = db.exec("SELECT * FROM bookings ORDER BY id DESC");
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '';
+
+            let totalRev = 0;
+
+            if (res.length > 0) {
+                const rows = res[0].values;
+                rows.forEach(row => {
+                    const [id, invNo, name, room, category, dur, method, amount, date] = row;
+                    totalRev += amount;
+
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-700/50";
+                    tr.innerHTML = `
+                        <td class="p-3 font-mono text-xs text-amber-400">${invNo}</td>
+                        <td class="p-3 font-semibold text-white">${name}</td>
+                        <td class="p-3">បន្ទប់ (${room})</td>
+                        <td class="p-3">${dur}</td>
+                        <td class="p-3 text-xs">${method}</td>
+                        <td class="p-3 font-bold text-emerald-400">$${amount.toFixed(2)}</td>
+                        <td class="p-3 text-xs text-slate-400">${date}</td>
+                        <td class="p-3 text-center">
+                            <button onclick="deleteBooking(${id})" class="px-2 py-1 bg-rose-600/80 hover:bg-rose-600 text-white text-xs rounded transition">
+                                លុប
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-500">មិនទាន់មានទិន្នន័យនៅឡើយទេ</td></tr>`;
+            }
+
+            document.getElementById('totalRevenue').innerText = `$${totalRev.toFixed(2)}`;
+        }
+
+        function deleteBooking(id) {
+            if (confirm("តើអ្នកពិតជាចង់លុបទិន្នន័យកក់នេះមែនទេ?")) {
+                db.run("DELETE FROM bookings WHERE id = ?", [id]);
+                saveDbToLocalStorage();
+                loadBookingHistory();
+            }
+        }
+
+        function exportDatabase() {
+            if (!db) return;
+            const binaryArray = db.export();
+            const blob = new Blob([binaryArray], { type: 'application/octet-stream' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `villa_management_backup_${new Date().toISOString().slice(0, 10)}.sqlite`;
+            a.click();
+        }
+
+        function importDatabase(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function() {
+                const Uints = new Uint8Array(reader.result);
+                db = new SQL.Database(Uints);
+                saveDbToLocalStorage();
+                loadBookingHistory();
+                alert("ទិន្នន័យត្រូវបាននាំចូលដោយជោគជ័យ!");
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Set default date input to today's string format on load
+        window.addEventListener('DOMContentLoaded', () => {
+            initDatabase();
+            calculatePrice();
+            
+            const todayStr = new Date().toISOString().slice(0, 10);
+            document.getElementById('invoiceDate').value = todayStr;
+        });
+    </script>
+</body>
+</html>
